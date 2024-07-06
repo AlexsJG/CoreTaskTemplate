@@ -13,6 +13,8 @@ public class Util {
     static Connection connection = null;
     public Connection getConnection() {
 
+
+
         try {
             Driver driver = new Driver();
             DriverManager.registerDriver(driver);
