@@ -98,5 +98,16 @@ public class UserServiceTest {
             Assert.fail("При тестировании очистки таблицы пользователей произошло исключение\n" + e);
         }
     }
-
+    @Test
+    public void removeUserByIdFail() {
+        try {
+            userService.dropUsersTable();
+            userService.createUsersTable();
+            userService.saveUser(testName, testLastName, testAge);
+            List<User> users = userService.getAllUsers();
+            userService.removeUserById(10L);
+        } catch (Exception e) {
+            Assert.fail("При тестировании удаления пользователя по id произошло исключение\n" + e);
+        }
+    }
 }
