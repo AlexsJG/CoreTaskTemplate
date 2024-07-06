@@ -51,8 +51,8 @@ public class UserDaoJDBCImpl implements UserDao {
     public void removeUserById(long id) {
 
         try (PreparedStatement preparedstatement = getConnect.prepareStatement(REMOVE_USER)) {
-            preparedstatement.setInt(1, (int) id);
-            preparedstatement.executeUpdate();
+            preparedstatement.setLong(1, id);
+            preparedstatement.execute();
             System.out.println(" User с номером id " + id + " удален из базы данных");
         } catch (SQLException e) {
             System.out.println(" Не удалось удалить User'a с id " + id + " из таблицы ");
@@ -65,10 +65,11 @@ public class UserDaoJDBCImpl implements UserDao {
         try (Statement statement = getConnect.createStatement()) {
             ResultSet rs = statement.executeQuery("SELECT * FROM one.tableIdea");
             while (rs.next()) {
+                Long id = rs.getLong("id");
                 String name = rs.getString("name");
                 String lastName = rs.getString("lastName");
                 byte age = (byte) rs.getInt("age");
-                users.add(new User(name, lastName, age));
+                users.add(new User(id, name, lastName, age));
             }
         } catch (SQLException e) {
             System.out.println(" Не удалось получить список Users из базы данных ");
