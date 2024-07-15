@@ -14,6 +14,7 @@ public class Logging {
             throw new RuntimeException(e);
         }
         logger.setUseParentHandlers(false);
+
         handler.setFormatter(new myFormatter());
         logger.addHandler(handler);
     }

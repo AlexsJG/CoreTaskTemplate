@@ -29,6 +29,7 @@ public class UserDaoJDBCImpl implements UserDao {
                     "name varchar(45) not null, lastName varchar(45) not null, age int not null, PRIMARY KEY (id))");
             logger.log(Level.INFO, "Таблица создана");
         } catch (SQLException e) {
+
             logger.log(Level.SEVERE, " Ошибка создания таблицы", e);
         }
     }
