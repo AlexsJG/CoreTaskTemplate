@@ -1,15 +1,23 @@
 package jm.task.core.jdbc.dao;
+
 import jm.task.core.jdbc.model.User;
 import jm.task.core.jdbc.util.Util;
+
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.logging.Level;
+
+import static jm.task.core.jdbc.Logging.Logging.logger;
+
 
 public class UserDaoJDBCImpl implements UserDao {
     private static final String INSERT_USER = "INSERT INTO one.tableIdea (name, lastname, age) VALUES (?,?,?)";
+    private static final String AVAILABILITAY_USER = "SELECT ID FROM one.tableIdea WHERE id = ?";
     private static final String REMOVE_USER = "DELETE FROM one.tableIdea WHERE id = ?";
     Util util = new Util();
     Connection getConnect = util.getConnection();
+
 
     public UserDaoJDBCImpl() {
     }
@@ -17,21 +25,37 @@ public class UserDaoJDBCImpl implements UserDao {
     public void createUsersTable() {
 
         try (Statement statement = getConnect.createStatement()) {
-            statement.executeUpdate("CREATE table IF NOT EXISTS one.tableIdea (id int not null auto_increment, " +
+            statement.executeUpdate("CREATE table IF NOT EXISTS one.tableIdea (id BIGINT not null auto_increment, " +
                     "name varchar(45) not null, lastName varchar(45) not null, age int not null, PRIMARY KEY (id))");
-            System.out.println(" Таблица создана ");
+            logger.log(Level.INFO, "Таблица создана");
         } catch (SQLException e) {
-            System.out.println(" Ошибка создания таблицы ");
+            logger.log(Level.SEVERE, " Ошибка создания таблицы", e);
         }
     }
 
     public void dropUsersTable() {
+        Statement statement = null;
+        try {
+            DatabaseMetaData md = getConnect.getMetaData();
+            ResultSet rs = md.getTables(null, null, "one.tableIdea", null);
+            if (rs.next()) {
+                statement = getConnect.createStatement();
+                statement.executeUpdate("DROP TABLE one.tableIdea");
+                logger.log(Level.INFO, "Таблица успешно удалена");
+            } else {
+                logger.log(Level.INFO, "Таблицу one.tableIdea не удалить, так как ее не существует");
+            }
 
-        try (Statement statement = getConnect.createStatement()) {
-            statement.executeUpdate("drop table IF EXISTS one.tableIdea");
-            System.out.println(" Таблица удалена ");
         } catch (SQLException e) {
-            System.out.println(" Ошибка удаления таблицы ");
+            logger.log(Level.SEVERE, " Ошибка удаления таблицы", e);
+        } finally {
+            try {
+                if (statement != null) {
+                    statement.close();
+                }
+            } catch (SQLException e) {
+                logger.log(Level.SEVERE, " Не удалось закрыть preparedstatement", e);
+            }
         }
     }
 
@@ -42,20 +66,37 @@ public class UserDaoJDBCImpl implements UserDao {
             preparedstatement.setString(2, lastName);
             preparedstatement.setInt(3, age);
             preparedstatement.executeUpdate();
-            System.out.println(" User с именем " + lastName + " " + name + " добавлен в базу данных");
+            System.out.println("User с именем " + lastName + " " + name + " добавлен в таблицу");
+            logger.log(Level.INFO, "User добавлен в таблицу");
         } catch (SQLException e) {
-            System.out.println(" Не удалось добавить User'a  с именем " + lastName + " " + name + " в таблицу ");
+            logger.log(Level.SEVERE, " Не удалось добавить User'a  с именем " + lastName + " " + name + " в таблицу ", e);
         }
     }
 
     public void removeUserById(long id) {
-
-        try (PreparedStatement preparedstatement = getConnect.prepareStatement(REMOVE_USER)) {
+        PreparedStatement preparedstatement = null;
+        try {
+            preparedstatement = getConnect.prepareStatement(AVAILABILITAY_USER);
             preparedstatement.setLong(1, id);
-            preparedstatement.execute();
-            System.out.println(" User с номером id " + id + " удален из базы данных");
+            ResultSet resultSet = preparedstatement.executeQuery();
+            if (resultSet.next()) {
+                preparedstatement = getConnect.prepareStatement(REMOVE_USER);
+                preparedstatement.setLong(1, id);
+                preparedstatement.executeUpdate();
+                logger.log(Level.INFO, "User с номером id " + id + " удален из таблицы");
+            } else {
+                logger.log(Level.INFO, "В таблице нет записи под номером " + id);
+            }
         } catch (SQLException e) {
-            System.out.println(" Не удалось удалить User'a с id " + id + " из таблицы ");
+            logger.log(Level.SEVERE, " Ошибка удаления User'a с id " + id + " из таблицы ", e);
+        } finally {
+            try {
+                if (preparedstatement != null) {
+                    preparedstatement.close();
+                }
+            } catch (SQLException e) {
+                logger.log(Level.SEVERE, " Не удалось закрыть preparedstatement", e);
+            }
         }
     }
 
@@ -71,8 +112,9 @@ public class UserDaoJDBCImpl implements UserDao {
                 byte age = (byte) rs.getInt("age");
                 users.add(new User(id, name, lastName, age));
             }
+            logger.log(Level.INFO, "Список Users получен");
         } catch (SQLException e) {
-            System.out.println(" Не удалось получить список Users из базы данных ");
+            logger.log(Level.SEVERE, " Не удалось получить список Users из базы данных", e);
         }
         return users;
     }
@@ -80,9 +122,9 @@ public class UserDaoJDBCImpl implements UserDao {
     public void cleanUsersTable() {
         try (Statement statement = getConnect.createStatement()) {
             statement.executeUpdate("TRUNCATE TABLE one.tableIdea");
-            System.out.println(" Таблица очищена ");
+            logger.log(Level.INFO, "Таблица очищена ");
         } catch (SQLException e) {
-            System.out.println(" Ошибка очистки таблицы ");
+            logger.log(Level.SEVERE, " Ошибка очистки таблицы", e);
         }
     }
 }
